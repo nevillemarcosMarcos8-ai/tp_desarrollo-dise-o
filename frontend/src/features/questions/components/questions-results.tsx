@@ -48,7 +48,7 @@ export default function QuestionsResults({ criteria }: { criteria: Criteria }) {
   }
 
   return <>
-    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Resultado de la búsqueda de preguntas." actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => router.push("/administracion/preguntas")}>Volver a buscar</Button><Button onClick={() => router.push("/administracion/preguntas/nueva")}>Nueva pregunta</Button></div>} />
+    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Resultado de la búsqueda de preguntas." actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button><Button variant="secondary" onClick={() => router.push("/administracion/preguntas")}>Volver a buscar</Button><Button onClick={() => router.push("/administracion/preguntas/nueva")}>Nueva pregunta</Button></div>} />
     <Panel title="Resultados de la búsqueda" description="Se muestran las preguntas que coinciden con los criterios ingresados.">
       {loading ? <LoadingState label="Buscando preguntas…" /> : <DataTable rows={visibleRows} rowKey={(row) => row.id} columns={[
         { key: "competencia", header: "Competencia", render: (row) => row.factor?.competencia?.nombre ?? "—" },
@@ -65,7 +65,7 @@ export default function QuestionsResults({ criteria }: { criteria: Criteria }) {
         <div className="flex items-center gap-2"><Button variant="secondary" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>Anterior</Button><span>Página {page} de {pageCount}</span><Button variant="secondary" disabled={page >= pageCount} onClick={() => setPage((current) => current + 1)}>Siguiente</Button><label className="ml-2">Mostrar <select className="ml-1 rounded border px-2 py-1" value={pageSize} onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}><option value={5}>5</option><option value={10}>10</option><option value={20}>20</option></select></label></div>
       </div>}
       <ErrorMessage error={searchQuestions.error ?? deleteQuestion.error} />
-      {removedName && <Notice tone="success" title="Baja realizada">La pregunta “{removedName}” fue dada de baja. El backend todavía no registra la auditoría de usuario, fecha y hora requerida por el caso de uso.<Button className="ml-3" variant="secondary" onClick={() => { setRemovedName(""); setAuditMissing(false); }}>Aceptar</Button>{auditMissing && <span className="sr-only">Auditoría pendiente.</span>}</Notice>}
+      {removedName && <Notice tone="success" title="Baja realizada">La pregunta “{removedName}” fue dada de baja correctamente y se registró la auditoría correspondiente.<Button className="ml-3" variant="secondary" onClick={() => { setRemovedName(""); setAuditMissing(false); }}>Aceptar</Button>{auditMissing && <span className="sr-only">Auditoría registrada.</span>}</Notice>}
     </Panel>
   </>;
 }

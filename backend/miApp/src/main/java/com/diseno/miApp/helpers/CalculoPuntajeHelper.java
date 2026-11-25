@@ -35,6 +35,7 @@ public class CalculoPuntajeHelper {
     private Map<Long, Double> calcularPuntajes(
             List<RespuestaPreguntaCuestionario> respuestas) {
         Map<Long, Map<Long, Integer>> sumas = new HashMap<>();
+        Map<Long, Map<Long, Integer>> cantidades = new HashMap<>();
 
         for (RespuestaPreguntaCuestionario respuesta : respuestas) {
             ModeloPregunta pregunta = respuesta.getPregunta();
@@ -49,12 +50,20 @@ public class CalculoPuntajeHelper {
             }
             sumas.computeIfAbsent(idCompetencia, id -> new HashMap<>())
                     .merge(idFactor, ponderacion, Integer::sum);
+            cantidades.computeIfAbsent(idCompetencia, id -> new HashMap<>())
+                    .merge(idFactor, 1, Integer::sum);
         }
 
         Map<Long, Double> resultado = new HashMap<>();
         sumas.forEach((idCompetencia, porFactor) -> {
-            double puntajeCompetencia = porFactor.values().stream()
-                    .mapToDouble(sumaFactor -> sumaFactor / 2.0)
+            Map<Long, Integer> conteoPorFactor =
+                    cantidades.getOrDefault(idCompetencia, Map.of());
+            double puntajeCompetencia = porFactor.entrySet().stream()
+                    .mapToDouble(entrada -> {
+                        int cantidad = conteoPorFactor.getOrDefault(
+                                entrada.getKey(), 2);
+                        return entrada.getValue() / (double) Math.max(1, cantidad);
+                    })
                     .average()
                     .orElse(0.0);
             resultado.put(idCompetencia, puntajeCompetencia);

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -31,11 +32,20 @@ public class ReporteController {
         );
     }
 
-    @GetMapping("/puestos/{idPuesto}/orden-merito")
-    public ResponseEntity<List<OrdenMeritoGrupoDTO>> emitirOrdenMerito(
+    @GetMapping("/puestos/{idPuesto}/evaluaciones")
+    public ResponseEntity<List<EvaluacionPuestoDTO>> obtenerEvaluacionesPorPuesto(
             @PathVariable Long idPuesto) {
         return ResponseEntity.ok(
-                reporteServices.emitirOrdenMerito(idPuesto)
+                reporteServices.obtenerEvaluacionesPorPuesto(idPuesto)
+        );
+    }
+
+    @GetMapping("/puestos/{idPuesto}/orden-merito")
+    public ResponseEntity<List<OrdenMeritoGrupoDTO>> emitirOrdenMerito(
+            @PathVariable Long idPuesto,
+            @RequestParam(required = false) List<Long> idsEvaluaciones) {
+        return ResponseEntity.ok(
+                reporteServices.emitirOrdenMerito(idPuesto, idsEvaluaciones)
         );
     }
 

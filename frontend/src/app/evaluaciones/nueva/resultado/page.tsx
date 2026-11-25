@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { downloadEvaluationKeysExcel, readEvaluationFlow, type EvaluationFlowState } from "@/features/evaluations/flow";
+import { clearEvaluationFlow, downloadEvaluationKeysExcel, readEvaluationFlow, type EvaluationFlowState } from "@/features/evaluations/flow";
 import { appRoutes } from "@/shared/navigation/routes";
 import { Button, DataTable, Notice, PageHeader, Panel } from "@/shared/ui";
 
@@ -19,23 +18,34 @@ export default function EvaluationResultPage() {
     setReady(true);
   }, [router]);
 
+  function finishWithoutExport() {
+    clearEvaluationFlow();
+    router.push("/consultor");
+  }
+
+  function exportAndFinish() {
+    if (!flow?.confirmed) return;
+    const position = flow.positions.find((item) => item.idPuesto === flow.positionId);
+    const positionName = position?.nombrePuesto ?? "Puesto";
+    downloadEvaluationKeysExcel(flow.confirmed, positionName);
+  }
+
   if (!ready || !flow?.confirmed) return null;
-  const position = flow.positions.find((item) => item.idPuesto === flow.positionId);
-  const positionName = position?.nombrePuesto ?? "Puesto";
   return <>
-    <PageHeader eyebrow="CU025 · Paso 5 de 5" title="Evaluaciones creadas" description="Los cuestionarios se generaron correctamente. Compartí cada clave con el candidato correspondiente." />
-    <Panel title="Claves de ingreso">
-      <Notice tone="success" title="Evaluación confirmada">La lista contiene datos personales y claves de acceso. Descargala y compartila de forma segura.</Notice>
+    <PageHeader eyebrow="CU025 · Paso 5 de 5" title="Evaluaciones generadas" description="Se crearon los cuestionarios en estado activo para cada candidato bajo el mismo modelo." />
+    <Panel title="Lista de candidatos a evaluar y claves de ingreso">
+      <Notice tone="success" title="Evaluación guardada">¿Deseás exportar la lista de candidatos con sus claves a un archivo Excel?</Notice>
       <DataTable rows={flow.confirmed} rowKey={(row) => `${row.numeroDocumento}-${row.claveIngreso}`} emptyTitle="No se generaron evaluaciones" columns={[
-        { key: "candidate", header: "Candidato", render: (row) => `${row.apellido}, ${row.nombre}` },
-        { key: "document", header: "Documento", render: (row) => `${row.tipoDocumento} ${row.numeroDocumento}` },
+        { key: "apellido", header: "Apellido", render: (row) => row.apellido },
+        { key: "nombre", header: "Nombre", render: (row) => row.nombre },
+        { key: "tipoDocumento", header: "Tipo documento", render: (row) => row.tipoDocumento },
+        { key: "numeroDocumento", header: "Nro. documento", render: (row) => row.numeroDocumento },
         { key: "key", header: "Clave de ingreso", render: (row) => <strong className="font-mono">{row.claveIngreso}</strong> },
       ]} />
-      <Panel className="mt-5" title="¿Querés exportar la lista y las claves a Excel?" description="El archivo incluye nombre, apellido, tipo y número de documento, y clave de ingreso.">
+      <Panel className="mt-5" title="Exportar datos a Excel" description="El archivo se descargará con el formato aaaa-mm-dd-hh-mm-NombreFunción.xls.">
         <div className="flex flex-wrap gap-3">
-          <Button disabled={!flow.confirmed.length} onClick={() => downloadEvaluationKeysExcel(flow.confirmed ?? [], positionName)}>Descargar Excel</Button>
-          <Link className="inline-flex min-h-10 items-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold" href="/consultor">No, volver al inicio</Link>
-          <Link className="inline-flex min-h-10 items-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-semibold" href={appRoutes.newEvaluation}>Finalizar y comenzar otra evaluación</Link>
+          <Button type="button" disabled={!flow.confirmed.length} onClick={exportAndFinish}>Exportar a Excel</Button>
+          <Button type="button" variant="secondary" onClick={finishWithoutExport}>No exportar y finalizar</Button>
         </div>
       </Panel>
     </Panel>

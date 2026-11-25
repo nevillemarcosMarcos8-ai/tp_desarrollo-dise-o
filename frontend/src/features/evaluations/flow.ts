@@ -5,6 +5,7 @@ const STORAGE_KEY = "evaluation-flow-v1";
 export type EvaluationFlowState = {
   criteria: SearchEvaluationCandidatesRequest;
   candidates: EvaluationCandidate[];
+  selectedCandidates?: EvaluationCandidate[];
   selectedIds: number[];
   positions: EvaluationPosition[];
   positionId: number | null;

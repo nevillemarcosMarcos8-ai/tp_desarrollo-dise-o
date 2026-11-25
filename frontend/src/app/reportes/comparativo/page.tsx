@@ -28,10 +28,13 @@ export default function ComparativeReportSearchPage() {
     <PageHeader eyebrow="Consultor · CU027" title="Emitir reporte comparativo" description="Primero buscá el puesto para el que querés comparar los resultados de un candidato." />
     <Panel title="Buscar puesto" description="Podés completar el nombre del puesto, la empresa o ambos.">
       <form noValidate onSubmit={search} className="grid max-w-2xl gap-4 sm:grid-cols-2">
-        <Field label="Nombre del puesto" placeholder="Ej.: Analista de sistemas" value={nombre} onChange={(event) => { setNombre(event.target.value); setErrors([]); }} />
-        <Field label="Empresa" placeholder="Ej.: Empresa Norte" value={empresa} onChange={(event) => { setEmpresa(event.target.value); setErrors([]); }} />
+        <Field label="Nombre de función o puesto" uppercase placeholder="Ej.: ANALISTA DE SISTEMAS" value={nombre} onChange={(event) => { setNombre(event.target.value); setErrors([]); }} />
+        <Field label="Empresa" uppercase placeholder="Ej.: EMPRESA NORTE" value={empresa} onChange={(event) => { setEmpresa(event.target.value); setErrors([]); }} />
         <ValidationSummary errors={errors} />
-        <div className="sm:col-span-2"><Button>Buscar puestos</Button></div>
+        <div className="flex flex-wrap gap-3 sm:col-span-2">
+          <Button type="submit">Buscar funciones</Button>
+          <Button type="button" variant="secondary" onClick={() => router.push("/consultor")}>Cancelar</Button>
+        </div>
       </form>
     </Panel>
   </>;

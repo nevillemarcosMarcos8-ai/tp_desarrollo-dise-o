@@ -9,6 +9,8 @@ public record CuestionarioDTO(
         Long idCuestionario,
         EstadoCuestionario estado,
         Integer bloque,
+        Integer totalBloques,
+        String instrucciones,
         List<PreguntaDTO> preguntas,
         List<RespuestaDTO> respuestasGuardadas,
         Float puntajeFinal,

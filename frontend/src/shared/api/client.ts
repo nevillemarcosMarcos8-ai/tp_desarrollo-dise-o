@@ -14,9 +14,9 @@ function messageForHttpError(status: number, backendMessage?: string): string {
     case 400:
       return safeBackendMessage || "Revisá los datos ingresados y volvé a intentar.";
     case 401:
-      return "No se pudo verificar tu acceso. Iniciá sesión nuevamente.";
+      return safeBackendMessage || "No se pudo verificar tu acceso. Iniciá sesión nuevamente.";
     case 403:
-      return "No tenés permiso para realizar esta acción.";
+      return safeBackendMessage || "No tenés permiso para realizar esta acción.";
     case 404:
       return safeBackendMessage || "No encontramos lo que buscabas o ya no está disponible.";
     case 409:

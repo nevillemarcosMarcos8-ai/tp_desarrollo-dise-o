@@ -9,6 +9,8 @@ public class OrdenMeritoDTO {
 
     private final Long idCuestionario;
     private final Long idCandidato;
+    private final String tipoDocumento;
+    private final String numeroDocumento;
     private final String nombre;
     private final String apellido;
     private final Float puntajeObtenido;
@@ -23,6 +25,12 @@ public class OrdenMeritoDTO {
 
         this.idCuestionario = cuestionario.getId();
         this.idCandidato = candidato == null ? null : candidato.getId();
+        this.tipoDocumento = candidato == null || candidato.getTipoDocumento() == null
+                ? null
+                : candidato.getTipoDocumento().name();
+        this.numeroDocumento = candidato == null
+                ? null
+                : candidato.getNumeroDocumento();
         this.nombre = candidato == null ? null : candidato.getNombre();
         this.apellido = candidato == null ? null : candidato.getApellido();
         this.puntajeObtenido = puntajeObtenido;
@@ -38,6 +46,14 @@ public class OrdenMeritoDTO {
 
     public Long getIdCandidato() {
         return idCandidato;
+    }
+
+    public String getTipoDocumento() {
+        return tipoDocumento;
+    }
+
+    public String getNumeroDocumento() {
+        return numeroDocumento;
     }
 
     public String getNombre() {

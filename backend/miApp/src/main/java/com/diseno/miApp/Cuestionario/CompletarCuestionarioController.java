@@ -21,6 +21,14 @@ public class CompletarCuestionarioController {
                 obtenerIdCandidato(authentication), request.claveIngreso());
     }
 
+    @PostMapping("/{idCuestionario}/iniciar")
+    public CuestionarioDTO iniciar(
+            Authentication authentication,
+            @PathVariable Long idCuestionario) {
+        return service.iniciarCuestionario(
+                obtenerIdCandidato(authentication), idCuestionario);
+    }
+
     @PatchMapping("/{idCuestionario}/respuestas")
     public CuestionarioDTO guardarParcial(
             Authentication authentication,

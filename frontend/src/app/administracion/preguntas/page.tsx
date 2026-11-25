@@ -59,8 +59,9 @@ export default function QuestionsManagementPage() {
           <option value="">Seleccionar factor</option>
           {availableFactors.filter((item) => item.estaActivo).map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}
         </SelectField>
-        <Field label="Nombre de pregunta" placeholder="Buscar por nombre de pregunta" value={name} onChange={(event) => setName(event.target.value)} />
+        <Field label="Nombre de pregunta" uppercase placeholder="Buscar por nombre de pregunta" value={name} onChange={(event) => setName(event.target.value)} />
         <div className="flex flex-wrap items-end justify-end gap-2 sm:col-span-2">
+          <Button type="button" variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button>
           <Button type="button" variant="secondary" onClick={clear}>Limpiar</Button>
           <Button type="button" variant="secondary" onClick={() => router.push("/administracion/preguntas/nueva")}>Nueva pregunta</Button>
           <Button>Buscar</Button>

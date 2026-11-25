@@ -24,11 +24,37 @@ function wrapLabel(value: string, maxLength = 17) {
 }
 
 export function CompetencyRadarChart({ rows }: { rows: CompetencyComparison[] }) {
-  if (rows.length < 3) {
-    return <p className="py-12 text-center text-sm text-slate-500">Se necesitan al menos tres competencias para dibujar el perfil.</p>;
+  if (rows.length === 0) {
+    return <p className="py-12 text-center text-sm text-slate-500">No hay competencias para graficar.</p>;
   }
 
   const maxValue = Math.max(5, Math.ceil(Math.max(...rows.flatMap((row) => [row.valorRequerido, row.valorObtenido])) / 5) * 5);
+
+  if (rows.length < 3) {
+    return <div className="mx-auto w-full max-w-[460px] space-y-5 py-4" role="img" aria-label="Gráfico comparativo de barras entre el nivel requerido y obtenido por competencia">
+      {rows.map((row) => {
+        const reqPct = Math.max(0, Math.min((row.valorRequerido / maxValue) * 100, 100));
+        const obtPct = Math.max(0, Math.min((row.valorObtenido / maxValue) * 100, 100));
+        return <div key={row.idCompetencia} className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/60 p-4">
+          <p className="text-xs font-bold uppercase tracking-wide text-slate-700">{row.nombreCompetencia}</p>
+          <div className="space-y-1.5 text-xs">
+            <div>
+              <div className="mb-1 flex justify-between text-slate-600"><span>Requerido</span><strong className="tabular-nums">{row.valorRequerido.toFixed(2).replace(".", ",")}</strong></div>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-blue-900" style={{ width: `${reqPct}%` }} /></div>
+            </div>
+            <div>
+              <div className="mb-1 flex justify-between text-slate-700"><span>Obtenido</span><strong className="tabular-nums">{row.valorObtenido.toFixed(2).replace(".", ",")}</strong></div>
+              <div className="h-3 w-full overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-indigo-600" style={{ width: `${obtPct}%` }} /></div>
+            </div>
+          </div>
+        </div>;
+      })}
+      <div className="mt-2 flex flex-wrap justify-center gap-x-6 gap-y-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <span className="inline-flex items-center gap-2"><i className="size-3 rounded bg-blue-900" />Requerido</span>
+        <span className="inline-flex items-center gap-2"><i className="size-3 rounded bg-indigo-600" />Obtenido</span>
+      </div>
+    </div>;
+  }
   const angleFor = (index: number) => (Math.PI * 2 * index) / rows.length - Math.PI / 2;
   const point = (index: number, value: number, scale = radius) => {
     const angle = angleFor(index);

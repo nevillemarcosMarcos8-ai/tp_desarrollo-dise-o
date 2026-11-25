@@ -5,8 +5,12 @@ import type { PositionReportSearch } from "./types";
 
 export const useSearchPositionSummaries = () =>
   useServiceAction((body: PositionReportSearch) => service.searchPositionSummaries(body));
+export const usePositionEvaluations = () =>
+  useServiceAction((positionId: number) => service.getPositionEvaluations(positionId));
 export const useMeritOrder = () =>
-  useServiceAction((positionId: number) => service.getMeritOrder(positionId));
+  useServiceAction(({ positionId, evaluationIds }: { positionId: number; evaluationIds?: number[] }) =>
+    service.getMeritOrder(positionId, evaluationIds),
+  );
 export const useCompletedCandidates = () =>
   useServiceAction((positionId: number) => service.getCompletedCandidates(positionId));
 export const useComparativeReport = () =>
