@@ -36,6 +36,7 @@ public class CompletarCuestionarioService {
     private final CalculoPuntajeHelper calculoPuntajeHelper;
     private final java.time.Duration plazoCompletar;
     private final int maximoAccesos;
+    private final String instrucciones;
 
     public CompletarCuestionarioService(
             CuestionarioRepository cuestionarioRepository,
@@ -46,7 +47,9 @@ public class CompletarCuestionarioService {
             CalculoPuntajeHelper calculoPuntajeHelper,
             @Value("${cuestionario.plazo-completar}")
             java.time.Duration plazoCompletar,
-            @Value("${cuestionario.maximo-accesos:5}") int maximoAccesos) {
+            @Value("${cuestionario.maximo-accesos:5}") int maximoAccesos,
+            @Value("${cuestionario.instrucciones:Lea atentamente cada pregunta antes de responder. Debe contestar todas las preguntas de cada bloque para avanzar al siguiente paso.}")
+            String instrucciones) {
         this.cuestionarioRepository = cuestionarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.preguntaRepository = preguntaRepository;
@@ -55,6 +58,7 @@ public class CompletarCuestionarioService {
         this.calculoPuntajeHelper = calculoPuntajeHelper;
         this.plazoCompletar = plazoCompletar;
         this.maximoAccesos = maximoAccesos;
+        this.instrucciones = instrucciones;
     }
 
     @Transactional(noRollbackFor = CuestionarioVencidoException.class)
@@ -74,8 +78,12 @@ public class CompletarCuestionarioService {
                 .orElseThrow(() -> errorNoEncontrado(
                         "No tenés un cuestionario activo o en proceso"));
 
+        String claveNormalizada = claveIngreso.trim();
         if (!passwordEncoder.matches(
-                claveIngreso, cuestionario.getClaveIngreso())) {
+                claveNormalizada, cuestionario.getClaveIngreso())
+                && !passwordEncoder.matches(
+                        claveNormalizada.toUpperCase(java.util.Locale.ROOT),
+                        cuestionario.getClaveIngreso())) {
             throw errorConflicto("La clave de ingreso no es válida");
         }
         if (cuestionario.getModelo() == null) {
@@ -90,17 +98,50 @@ public class CompletarCuestionarioService {
         if (cuestionario.getCantidadAccesos() != null
                 && cuestionario.getCantidadAccesos() >= maximoAccesos) {
             vencer(cuestionario, EstadoCuestionario.INCOMPLETO,
-                    "Se alcanzó el máximo de ingresos al cuestionario");
+                    "Se superó la cantidad máxima de accesos permitidos. El cuestionario quedó en estado Incompleto.");
         }
 
         LocalDateTime ahora = LocalDateTime.now();
         registrarAcceso(cuestionario, ahora);
+        cuestionarioRepository.save(cuestionario);
         if (cuestionario.getEstadoCuestionario() == EstadoCuestionario.ACTIVO) {
-            cuestionario.setEstadoCuestionario(EstadoCuestionario.EN_PROCESO);
-            cuestionario.setFechaInicio(ahora);
-            cuestionario.setFechaLimiteFinalizacion(ahora.plus(plazoCompletar));
-            cuestionario.setFechaCambioEstado(ahora);
+            return construirInstruccionesDTO(cuestionario);
         }
+        return construirBloquePendiente(cuestionario);
+    }
+
+    @Transactional(noRollbackFor = CuestionarioVencidoException.class)
+    public CuestionarioDTO iniciarCuestionario(
+            Long idCandidato,
+            Long idCuestionario) {
+        validarIdPositivo(idCandidato, "El ID del candidato debe ser positivo");
+        validarIdPositivo(idCuestionario,
+                "El ID del cuestionario debe ser positivo");
+        Cuestionario cuestionario = cuestionarioRepository.findById(idCuestionario)
+                .orElseThrow(() -> errorNoEncontrado("El cuestionario no existe"));
+        if (cuestionario.getCandidato() == null
+                || !idCandidato.equals(cuestionario.getCandidato().getId())) {
+            throw errorNoEncontrado("El cuestionario no pertenece al candidato");
+        }
+        if (cuestionario.getModelo() == null) {
+            throw errorConflicto(
+                    "Este cuestionario no tiene un modelo de preguntas disponible");
+        }
+
+        validarPlazos(cuestionario);
+        if (cuestionario.getEstadoCuestionario() == EstadoCuestionario.EN_PROCESO) {
+            return construirBloquePendiente(cuestionario);
+        }
+        if (cuestionario.getEstadoCuestionario() != EstadoCuestionario.ACTIVO) {
+            throw errorConflicto(
+                    "El cuestionario no está disponible para iniciarse");
+        }
+
+        LocalDateTime ahora = LocalDateTime.now();
+        cuestionario.setEstadoCuestionario(EstadoCuestionario.EN_PROCESO);
+        cuestionario.setFechaInicio(ahora);
+        cuestionario.setFechaLimiteFinalizacion(ahora.plus(plazoCompletar));
+        cuestionario.setFechaCambioEstado(ahora);
         cuestionarioRepository.save(cuestionario);
         return construirBloquePendiente(cuestionario);
     }
@@ -142,13 +183,14 @@ public class CompletarCuestionarioService {
                 .collect(Collectors.toSet());
         nuevas.stream().map(r -> r.getPregunta().getId())
                 .forEach(contestadas::add);
-        List<Long> faltantes = bloque.stream()
-                .map(ModeloPregunta::getId)
-                .filter(id -> !contestadas.contains(id))
+        List<String> faltantes = bloque.stream()
+                .filter(p -> !contestadas.contains(p.getId()))
+                .map(p -> "Pregunta " + p.getOrden())
                 .toList();
         if (!faltantes.isEmpty()) {
-            throw errorSolicitud("Faltan respuestas para las preguntas del bloque: "
-                    + faltantes);
+            throw errorSolicitud(
+                    "Debés responder todas las preguntas del bloque. Faltan responder: "
+                            + String.join(", ", faltantes));
         }
         if (!nuevas.isEmpty()) {
             respuestaService.guardarOActualizar(cuestionario, nuevas);
@@ -300,6 +342,28 @@ public class CompletarCuestionarioService {
         return actual.equals(maximo);
     }
 
+    private Integer calcularTotalBloques(Cuestionario cuestionario) {
+        return preguntasDelModelo(cuestionario).stream()
+                .map(ModeloPregunta::getBloque)
+                .max(Comparator.naturalOrder())
+                .orElse(0);
+    }
+
+    private CuestionarioDTO construirInstruccionesDTO(Cuestionario c) {
+        return new CuestionarioDTO(
+                c.getId(),
+                c.getEstadoCuestionario(),
+                null,
+                calcularTotalBloques(c),
+                instrucciones,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                java.util.Map.of()
+        );
+    }
+
     private CuestionarioDTO construirDTO(
             Cuestionario c, List<ModeloPregunta> bloque,
             List<RespuestaPreguntaCuestionario> respuestas,
@@ -325,6 +389,7 @@ public class CompletarCuestionarioService {
                 : bloque.getFirst().getBloque();
         return new CuestionarioDTO(
                 c.getId(), c.getEstadoCuestionario(), numeroBloque,
+                calcularTotalBloques(c), instrucciones,
                 preguntas, respuestasDTO,
                 resultado == null ? null : resultado.puntajeFinal(),
                 resultado == null ? null : resultado.cumpleMinimo(),

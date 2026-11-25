@@ -20,14 +20,14 @@ export function Button({ variant = "primary", className = "", ...props }: Button
 }
 
 const fieldClass = "mt-1 block w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
-export function Field({ label, hint, className = "", ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string }) {
-  return <label className={`block text-sm font-medium text-slate-700 ${className}`}>{label}<input className={fieldClass} {...props} />{hint && <small className="mt-1 block text-xs font-normal text-slate-500">{hint}</small>}</label>;
+export function Field({ label, hint, className = "", uppercase = false, onChange, ...props }: InputHTMLAttributes<HTMLInputElement> & { label: string; hint?: string; uppercase?: boolean }) {
+  return <label className={`block text-sm font-medium text-slate-700 ${className}`}>{label}<input className={`${fieldClass} ${uppercase ? "uppercase placeholder:normal-case" : ""}`} onChange={uppercase && onChange ? (event) => { event.target.value = event.target.value.toUpperCase(); onChange(event); } : onChange} {...props} />{hint && <small className="mt-1 block text-xs font-normal text-slate-500">{hint}</small>}</label>;
 }
 export function SelectField({ label, children, className = "", ...props }: SelectHTMLAttributes<HTMLSelectElement> & { label: string; children: ReactNode }) {
   return <label className={`block text-sm font-medium text-slate-700 ${className}`}>{label}<select className={fieldClass} {...props}>{children}</select></label>;
 }
-export function TextAreaField({ label, className = "", ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string }) {
-  return <label className={`block text-sm font-medium text-slate-700 ${className}`}>{label}<textarea className={`${fieldClass} min-h-24 resize-y`} {...props} /></label>;
+export function TextAreaField({ label, className = "", uppercase = false, onChange, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; uppercase?: boolean }) {
+  return <label className={`block text-sm font-medium text-slate-700 ${className}`}>{label}<textarea className={`${fieldClass} min-h-24 resize-y ${uppercase ? "uppercase placeholder:normal-case" : ""}`} onChange={uppercase && onChange ? (event) => { event.target.value = event.target.value.toUpperCase(); onChange(event); } : onChange} {...props} /></label>;
 }
 
 type NoticeTone = "info" | "success" | "warning" | "error";

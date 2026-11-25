@@ -60,7 +60,7 @@ public class ReporteServices {
             PuestoRequest request) {
         List<Puesto> puestos = ejecutarConMensajeDeError(
                 "No se pudieron buscar los puestos para el orden de mérito",
-                () -> puestoServices.buscarPuestos(request)
+                () -> puestoServices.buscarPuestosConteniendo(request)
         );
 
         if (puestos.isEmpty()) {
@@ -230,7 +230,65 @@ public class ReporteServices {
     }
 
     @Transactional(readOnly = true)
+    public List<EvaluacionPuestoDTO> obtenerEvaluacionesPorPuesto(Long idPuesto) {
+        validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
+        puestoServices.buscarPorId(idPuesto);
+        List<Cuestionario> cuestionarios =
+                cuestionarioServices.buscarTodosPorPuesto(idPuesto);
+
+        if (cuestionarios.isEmpty()) {
+            throw errorNoEncontrado("El puesto no posee evaluaciones");
+        }
+
+        Map<Long, List<Cuestionario>> porModelo = new LinkedHashMap<>();
+        for (Cuestionario cuestionario : cuestionarios) {
+            if (cuestionario.getModelo() != null
+                    && cuestionario.getModelo().getId() != null) {
+                porModelo.computeIfAbsent(
+                        cuestionario.getModelo().getId(),
+                        id -> new ArrayList<>()
+                ).add(cuestionario);
+            }
+        }
+
+        if (porModelo.isEmpty()) {
+            throw errorNoEncontrado("El puesto no posee evaluaciones disponibles");
+        }
+
+        return porModelo.entrySet().stream()
+                .map(entrada -> {
+                    List<Cuestionario> lote = entrada.getValue();
+                    ModeloCuestionario modelo = lote.getFirst().getModelo();
+                    long completos = lote.stream()
+                            .filter(c -> c.getEstadoCuestionario()
+                                    == EstadoCuestionario.COMPLETO)
+                            .count();
+                    return new EvaluacionPuestoDTO(
+                            entrada.getKey(),
+                            modelo.getFechaCreacion(),
+                            lote.size(),
+                            completos
+                    );
+                })
+                .sorted(Comparator.comparing(
+                        EvaluacionPuestoDTO::fechaCreacion,
+                        Comparator.nullsLast(Comparator.reverseOrder())
+                ).thenComparing(
+                        EvaluacionPuestoDTO::idEvaluacion,
+                        Comparator.reverseOrder()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<OrdenMeritoGrupoDTO> emitirOrdenMerito(Long idPuesto) {
+        return emitirOrdenMerito(idPuesto, null);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrdenMeritoGrupoDTO> emitirOrdenMerito(
+            Long idPuesto,
+            List<Long> idsEvaluaciones) {
         validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
         puestoServices.buscarPorId(idPuesto);
         List<Cuestionario> cuestionarios =
@@ -240,6 +298,25 @@ public class ReporteServices {
             throw errorNoEncontrado(
                     "El puesto no tiene cuestionarios asociados"
             );
+        }
+
+        if (idsEvaluaciones != null && !idsEvaluaciones.isEmpty()) {
+            for (Long idEvaluacion : idsEvaluaciones) {
+                validarIdPositivo(
+                        idEvaluacion,
+                        "Cada ID de evaluación debe ser positivo"
+                );
+            }
+            java.util.Set<Long> filtroIds = new java.util.HashSet<>(idsEvaluaciones);
+            cuestionarios = cuestionarios.stream()
+                    .filter(c -> c.getModelo() != null
+                            && filtroIds.contains(c.getModelo().getId()))
+                    .toList();
+            if (cuestionarios.isEmpty()) {
+                throw errorNoEncontrado(
+                        "No existen cuestionarios para las evaluaciones seleccionadas"
+                );
+            }
         }
 
         Map<String, List<OrdenMeritoDTO>> matriz = crearGruposPorEstado();

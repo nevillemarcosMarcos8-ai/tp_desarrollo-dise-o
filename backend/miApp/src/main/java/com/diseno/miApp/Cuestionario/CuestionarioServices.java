@@ -29,9 +29,12 @@ public class CuestionarioServices {
             EstadoCuestionario.ACTIVO,
             EstadoCuestionario.EN_PROCESO
     );
+    private static final char[] LETRAS_CLAVE =
+            "ABCDEFGHJKLMNPQRSTUVWXYZ".toCharArray();
+    private static final char[] DIGITOS_CLAVE =
+            "0123456789".toCharArray();
     private static final char[] CARACTERES_CLAVE =
-            "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789"
-                    .toCharArray();
+            "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789".toCharArray();
     private static final int LONGITUD_CLAVE = 8;
 
     private final CuestionarioRepository cuestionarioRepository;
@@ -146,12 +149,19 @@ public class CuestionarioServices {
     }
 
     private String generarClaveIngreso() {
-        StringBuilder clave = new StringBuilder(LONGITUD_CLAVE);
-        for (int i = 0; i < LONGITUD_CLAVE; i++) {
-            clave.append(CARACTERES_CLAVE[
-                    random.nextInt(CARACTERES_CLAVE.length)]);
+        char[] chars = new char[LONGITUD_CLAVE];
+        chars[0] = LETRAS_CLAVE[random.nextInt(LETRAS_CLAVE.length)];
+        chars[1] = DIGITOS_CLAVE[random.nextInt(DIGITOS_CLAVE.length)];
+        for (int i = 2; i < LONGITUD_CLAVE; i++) {
+            chars[i] = CARACTERES_CLAVE[random.nextInt(CARACTERES_CLAVE.length)];
         }
-        return clave.toString();
+        for (int i = chars.length - 1; i > 0; i--) {
+            int j = random.nextInt(i + 1);
+            char tmp = chars[i];
+            chars[i] = chars[j];
+            chars[j] = tmp;
+        }
+        return new String(chars);
     }
 
     public List<CandidatoPorPuestoProjection> buscarCandidatosPorPuestoCuestionario(

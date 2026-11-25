@@ -35,7 +35,7 @@ export default function ComparativeCandidatesPage() {
 
   function compare() {
     if (!selected) {
-      setErrors(["Seleccioná un candidato de la lista para comparar."]);
+      setErrors(["Al menos se debe seleccionar un candidato de la lista."]);
       return;
     }
     router.push(`/reportes/comparativo/puestos/${idPuesto}/cuestionarios/${selected}${querySuffix}`);
@@ -66,7 +66,10 @@ export default function ComparativeCandidatesPage() {
         <ValidationSummary errors={errors} />
         <ErrorMessage error={positionQuery.error} />
         <ErrorMessage error={candidatesQuery.error} />
-        <Button disabled={!selected || candidatesQuery.isPending} onClick={compare}>Comparar candidato</Button>
+        <div className="flex flex-wrap gap-3">
+          <Button type="button" disabled={candidatesQuery.isPending} onClick={compare}>Comparar</Button>
+          <Button type="button" variant="secondary" onClick={() => router.push("/consultor")}>Cancelar</Button>
+        </div>
       </div>
     </Panel>
   </>;
