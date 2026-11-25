@@ -81,6 +81,7 @@ public class ModeloCuestionarioService {
 
             ModeloCompetencia copiaCompetencia = new ModeloCompetencia();
             copiaCompetencia.setIdCompetenciaOriginal(competencia.getId());
+            copiaCompetencia.setCodigoCompetencia(competencia.getCodigo());
             copiaCompetencia.setNombreCompetencia(competencia.getNombre());
             copiaCompetencia.setPonderacionMinima(
                     caracteristica.getPonderacion());

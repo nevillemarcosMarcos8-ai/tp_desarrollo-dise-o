@@ -1,5 +1,7 @@
 package com.diseno.miApp.Pregunta;
 
+import com.diseno.miApp.RegistroAuditoria.GestionBajasService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,12 +15,15 @@ public class PreguntaController {
 
     private final PreguntaService preguntaService;
     private final GestionPreguntaService gestionPreguntaService;
+    private final GestionBajasService gestionBajasService;
 
     public PreguntaController(
             PreguntaService preguntaService,
-            GestionPreguntaService gestionPreguntaService) {
+            GestionPreguntaService gestionPreguntaService,
+            GestionBajasService gestionBajasService) {
         this.preguntaService = preguntaService;
         this.gestionPreguntaService = gestionPreguntaService;
+        this.gestionBajasService = gestionBajasService;
     }
 
     @GetMapping
@@ -64,9 +69,10 @@ public class PreguntaController {
 
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> eliminarPregunta(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpSession session) {
 
-        preguntaService.eliminarPregunta(id);
+        gestionBajasService.darBajaPregunta(id, session);
 
         return ResponseEntity.noContent().build();
     }

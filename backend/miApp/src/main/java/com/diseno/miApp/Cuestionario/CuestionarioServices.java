@@ -18,7 +18,9 @@ import java.util.StringJoiner;
 import java.util.stream.IntStream;
 
 import static com.diseno.miApp.helpers.ManejoErroresHelper.errorConflicto;
+import static com.diseno.miApp.helpers.ManejoErroresHelper.errorNoEncontrado;
 import static com.diseno.miApp.helpers.ManejoErroresHelper.errorSolicitud;
+import static com.diseno.miApp.helpers.ValidacionesHelper.validarIdPositivo;
 
 @Service
 public class CuestionarioServices {
@@ -49,6 +51,21 @@ public class CuestionarioServices {
 
     public List<Cuestionario> buscarTodosPorPuesto(Long idPuesto) {
         return cuestionarioRepository.findByPuesto_Id(idPuesto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Cuestionario> buscarCompletosPorPuesto(Long idPuesto) {
+        validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
+        return cuestionarioRepository.findByPuesto_IdAndEstadoCuestionario(
+                idPuesto, EstadoCuestionario.COMPLETO);
+    }
+
+    @Transactional(readOnly = true)
+    public Cuestionario buscarPorId(Long idCuestionario) {
+        validarIdPositivo(idCuestionario,
+                "El ID del cuestionario debe ser positivo");
+        return cuestionarioRepository.findById(idCuestionario)
+                .orElseThrow(() -> errorNoEncontrado("Cuestionario no encontrado"));
     }
 
     public void validarSinCuestionarioActivoOEnProceso(

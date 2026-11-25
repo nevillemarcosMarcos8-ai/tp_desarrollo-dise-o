@@ -171,10 +171,4 @@ public class FactorService {
         return factorRepository.save(factor);
     }
 
-    public void eliminarFactor(Long id) {
-        Factor factor = buscarPorId(id);
-        factor.setEstaActivo(false);
-        factorRepository.save(factor);
-    }
-
 }

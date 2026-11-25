@@ -183,15 +183,6 @@ public class PuestoService {
 
         return puestoRepository.save(puesto);
     }
-    public void darBajaPuesto(Long id) {
-
-        Puesto puesto = buscarPorId(id);
-
-        puesto.setEstaActiva(false);
-
-        puestoRepository.save(puesto);
-    }
-
     public Puesto reactivarPuesto(Long id) {
         Puesto puesto = buscarPorId(id);
         puesto.setEstaActiva(true);

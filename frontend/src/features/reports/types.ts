@@ -6,4 +6,4 @@ export type MeritCandidate = { idCuestionario: number; idCandidato: number | nul
 export type MeritGroup = { estado: string; candidatos: MeritCandidate[] };
 export type ComparativeCandidate = { idCuestionario: number; idCandidato: number; nombre: string; apellido: string; tipoDocumento: string; numeroDocumento: string; numeroCandidato: string; fechaFinalizacion: string };
 export type CompetencyComparison = { idCompetencia: number; nombreCompetencia: string; valorRequerido: number; valorObtenido: number };
-export type ComparativeReport = { idPuesto: number; codigoPuesto: string; nombrePuesto: string; empresa: string; candidato: ComparativeCandidate; competencias: CompetencyComparison[] };
+export type ComparativeReport = { idPuesto: number; codigoPuesto: string; nombrePuesto: string; empresa: string | null; candidato: ComparativeCandidate; competencias: CompetencyComparison[] };

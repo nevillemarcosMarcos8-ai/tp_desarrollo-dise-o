@@ -56,6 +56,4 @@ public class AutenticarService {
                 candidato.getNombre() + " " + candidato.getApellido());
     }
 
-    public AutenticarResponse autenticarConsultor(AutenticarConsultorRequest request) {
-    return null;}
 }

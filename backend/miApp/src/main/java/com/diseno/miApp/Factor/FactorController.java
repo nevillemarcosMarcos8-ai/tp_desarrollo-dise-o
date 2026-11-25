@@ -1,6 +1,8 @@
 package com.diseno.miApp.Factor;
 
 import com.diseno.miApp.Competencia.FactorModificarRequest;
+import com.diseno.miApp.RegistroAuditoria.GestionBajasService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +15,15 @@ public class FactorController {
 
     private final FactorService factorService;
     private final GestionFactorService gestionFactorService;
+    private final GestionBajasService gestionBajasService;
 
     public FactorController(
             FactorService factorService,
-            GestionFactorService gestionFactorService) {
+            GestionFactorService gestionFactorService,
+            GestionBajasService gestionBajasService) {
         this.factorService = factorService;
         this.gestionFactorService = gestionFactorService;
+        this.gestionBajasService = gestionBajasService;
     }
 
     @GetMapping
@@ -70,9 +75,11 @@ public class FactorController {
         return ResponseEntity.ok(response);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarFactor(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminarFactor(
+            @PathVariable Long id,
+            HttpSession session) {
 
-        factorService.eliminarFactor(id);
+        gestionBajasService.darBajaFactor(id, session);
 
         return ResponseEntity.noContent().build();
     }

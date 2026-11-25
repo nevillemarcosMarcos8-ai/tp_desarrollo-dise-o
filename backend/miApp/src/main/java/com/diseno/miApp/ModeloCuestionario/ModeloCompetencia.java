@@ -17,6 +17,8 @@ public class ModeloCompetencia {
     private ModeloCuestionario modelo;
 
     private Long idCompetenciaOriginal;
+    @Column(name = "codigo_competencia", length = 50)
+    private String codigoCompetencia;
     private String nombreCompetencia;
     private Integer ponderacionMinima;
 }

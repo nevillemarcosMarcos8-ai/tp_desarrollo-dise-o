@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Comparator;
 import java.util.stream.Collectors;
+import java.util.Objects;
 
 import com.diseno.miApp.Cuestionario.Cuestionario;
 import com.diseno.miApp.Cuestionario.CuestionarioServices;
@@ -13,12 +14,13 @@ import com.diseno.miApp.Cuestionario.CandidatoPorPuestoProjection;
 import com.diseno.miApp.Cuestionario.EvaluacionesCompletasPorPuestoProjection;
 import com.diseno.miApp.Cuestionario.ResumenCuestionariosPuesto;
 import com.diseno.miApp.Candidato.CandidatoResumenDTO;
+import com.diseno.miApp.Candidato.Candidato;
 import com.diseno.miApp.EstadoCuestionario.EstadoCuestionario;
 import com.diseno.miApp.OrdenDeMerito.OrdenMeritoDTO;
 import com.diseno.miApp.OrdenDeMerito.OrdenMeritoGrupoDTO;
 import com.diseno.miApp.Puesto.*;
 import com.diseno.miApp.RespuestaPreguntaCuestionario.*;
-import com.diseno.miApp.ModeloCuestionario.ModeloCompetencia;
+import com.diseno.miApp.ModeloCuestionario.ModeloCuestionario;
 import com.diseno.miApp.helpers.CalculoPuntajeHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -78,6 +80,104 @@ public class ReporteServices {
                         resumenesPorPuesto.get(puesto.getId())
                 ))
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<CandidatoComparativoResponse> obtenerCandidatosCompletos(
+            Long idPuesto) {
+        validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
+        puestoServices.buscarPorId(idPuesto);
+
+        return cuestionarioServices.buscarCompletosPorPuesto(idPuesto).stream()
+                .filter(cuestionario -> cuestionario.getCandidato() != null)
+                .sorted(Comparator.comparing(
+                        Cuestionario::getFechaRealizacion,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(this::aCandidatoComparativoResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ReporteComparativoResponse emitirReporteComparativo(
+            Long idPuesto,
+            Long idCuestionario) {
+        validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
+        validarIdPositivo(idCuestionario,
+                "El ID del cuestionario debe ser positivo");
+
+        Puesto puesto = puestoServices.buscarPorId(idPuesto);
+        Cuestionario cuestionario = cuestionarioServices.buscarPorId(idCuestionario);
+        if (cuestionario.getEstadoCuestionario() != EstadoCuestionario.COMPLETO) {
+            throw errorSolicitud("El cuestionario todavía no está completo");
+        }
+        if (cuestionario.getPuesto() == null
+                || !Objects.equals(cuestionario.getPuesto().getId(), idPuesto)) {
+            throw errorNoEncontrado(
+                    "El cuestionario no pertenece al puesto indicado");
+        }
+        ModeloCuestionario modelo = cuestionario.getModelo();
+        if (modelo == null) {
+            throw errorSolicitud(
+                    "El cuestionario completo no tiene un modelo congelado");
+        }
+
+        List<RespuestaPreguntaCuestionario> respuestas =
+                respuestaCuestionarioService.obtenerPorCuestionario(idCuestionario);
+        CalculoPuntajeHelper.ResultadoPuntaje resultado =
+                calculoPuntajeHelper.calcularResultado(
+                        respuestas, modelo.getCompetencias());
+
+        List<CompetenciaComparadaResponse> competencias =
+                modelo.getCompetencias().stream()
+                        .map(competencia -> {
+                            Long idCompetencia = competencia.getIdCompetenciaOriginal();
+                            if (idCompetencia == null
+                                    || competencia.getNombreCompetencia() == null
+                                    || competencia.getPonderacionMinima() == null) {
+                                throw errorSolicitud(
+                                        "El modelo congelado tiene una competencia incompleta");
+                            }
+                            Double obtenido = resultado.puntajesPorCompetencia()
+                                    .get(idCompetencia);
+                            if (obtenido == null) {
+                                throw errorSolicitud(
+                                        "Faltan respuestas para calcular la competencia "
+                                                + competencia.getNombreCompetencia());
+                            }
+                            return new CompetenciaComparadaResponse(
+                                    idCompetencia,
+                                    competencia.getNombreCompetencia(),
+                                    competencia.getPonderacionMinima().doubleValue(),
+                                    obtenido);
+                        })
+                        .toList();
+
+        return new ReporteComparativoResponse(
+                puesto.getId(),
+                puesto.getCodigo(),
+                puesto.getNombre(),
+                puesto.getEmpresa() == null ? null : puesto.getEmpresa().getNombre(),
+                aCandidatoComparativoResponse(cuestionario),
+                competencias);
+    }
+
+    private CandidatoComparativoResponse aCandidatoComparativoResponse(
+            Cuestionario cuestionario) {
+        Candidato candidato = cuestionario.getCandidato();
+        if (candidato == null || cuestionario.getFechaRealizacion() == null) {
+            throw errorSolicitud(
+                    "El cuestionario completo no tiene candidato o fecha de finalización");
+        }
+        return new CandidatoComparativoResponse(
+                cuestionario.getId(),
+                candidato.getId(),
+                candidato.getNombre(),
+                candidato.getApellido(),
+                candidato.getTipoDocumento() == null
+                        ? null : candidato.getTipoDocumento().name(),
+                candidato.getNumeroDocumento(),
+                candidato.getNumeroCandidato(),
+                cuestionario.getFechaRealizacion());
     }
 
     private Map<Long, ResumenCuestionariosPuesto> obtenerResumenesPorIds(

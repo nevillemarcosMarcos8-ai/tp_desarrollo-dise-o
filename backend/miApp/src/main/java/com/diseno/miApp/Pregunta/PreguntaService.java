@@ -101,10 +101,4 @@ public class PreguntaService {
         return preguntaRepository.save(pregunta);
     }
 
-    public void eliminarPregunta(Long id) {
-        Pregunta pregunta = buscarPorId(id);
-        pregunta.setEstaActivo(false);
-        preguntaRepository.save(pregunta);
-    }
-
 }

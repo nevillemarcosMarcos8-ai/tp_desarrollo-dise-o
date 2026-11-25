@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
+import com.diseno.miApp.Puesto.Puesto;
 
 @Repository
 public interface CuestionarioRepository extends JpaRepository<Cuestionario,Long> {
@@ -46,8 +48,49 @@ public interface CuestionarioRepository extends JpaRepository<Cuestionario,Long>
 
     List<Cuestionario> findByPuesto_Id(Long puestoId);
 
+    boolean existsByPuesto_Id(Long puestoId);
+
     Optional<Cuestionario> findFirstByCandidato_IdAndEstadoCuestionarioIn(
             Long candidatoId,
             List<EstadoCuestionario> estados
     );
+
+    @Query("""
+            SELECT DISTINCT c.puesto
+            FROM Cuestionario c
+            JOIN c.puesto p
+            LEFT JOIN p.empresa e
+            WHERE c.estadoCuestionario = :estado
+              AND c.fechaRealizacion IS NOT NULL
+              AND (:desde IS NULL OR c.fechaRealizacion >= :desde)
+              AND (:hastaExclusivo IS NULL OR c.fechaRealizacion < :hastaExclusivo)
+              AND (:nombre IS NULL OR p.nombre LIKE CONCAT('%', :nombre, '%'))
+              AND (:empresa IS NULL OR e.nombre LIKE CONCAT('%', :empresa, '%'))
+            ORDER BY p.nombre
+            """)
+    List<Puesto> buscarPuestosConResultadosCompletos(
+            @Param("estado") EstadoCuestionario estado,
+            @Param("nombre") String nombre,
+            @Param("empresa") String empresa,
+            @Param("desde") LocalDateTime desde,
+            @Param("hastaExclusivo") LocalDateTime hastaExclusivo);
+
+    @Query("""
+            SELECT c
+            FROM Cuestionario c
+            JOIN FETCH c.candidato
+            JOIN FETCH c.puesto
+            LEFT JOIN FETCH c.modelo
+            WHERE c.puesto.id = :idPuesto
+              AND c.estadoCuestionario = :estado
+              AND c.fechaRealizacion IS NOT NULL
+              AND (:desde IS NULL OR c.fechaRealizacion >= :desde)
+              AND (:hastaExclusivo IS NULL OR c.fechaRealizacion < :hastaExclusivo)
+            ORDER BY c.fechaRealizacion DESC, c.id
+            """)
+    List<Cuestionario> buscarEvaluacionesCompletasParaExportar(
+            @Param("idPuesto") Long idPuesto,
+            @Param("estado") EstadoCuestionario estado,
+            @Param("desde") LocalDateTime desde,
+            @Param("hastaExclusivo") LocalDateTime hastaExclusivo);
 }

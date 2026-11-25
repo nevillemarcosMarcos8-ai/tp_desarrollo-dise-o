@@ -1,5 +1,7 @@
 package com.diseno.miApp.Puesto;
 
+import com.diseno.miApp.RegistroAuditoria.GestionBajasService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,12 +20,15 @@ public class PuestoController {
 
     private final PuestoService puestoService;
     private final GestionPuestoService gestionPuestoService;
+    private final GestionBajasService gestionBajasService;
 
     public PuestoController(
             PuestoService puestoService,
-            GestionPuestoService gestionPuestoService) {
+            GestionPuestoService gestionPuestoService,
+            GestionBajasService gestionBajasService) {
         this.puestoService = puestoService;
         this.gestionPuestoService = gestionPuestoService;
+        this.gestionBajasService = gestionBajasService;
     }
 
     @GetMapping
@@ -88,9 +93,10 @@ public class PuestoController {
     // 4. DAR DE BAJA
     @DeleteMapping("/baja/{id}")
     public ResponseEntity<Void> darBajaPuesto(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpSession session) {
 
-        puestoService.darBajaPuesto(id);
+        gestionBajasService.darBajaPuesto(id, session);
 
         return ResponseEntity.noContent().build();
     }

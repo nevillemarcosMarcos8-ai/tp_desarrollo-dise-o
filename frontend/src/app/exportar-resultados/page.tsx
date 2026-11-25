@@ -12,6 +12,10 @@ export default function ResultsExportSearchPage() {
 
   function search(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (filters.desde && filters.hasta && filters.desde > filters.hasta) {
+      setErrors(["La fecha desde no puede ser posterior a la fecha hasta."]);
+      return;
+    }
     if (!Object.values(filters).some((value) => value.trim())) {
       setErrors(["Completá al menos un filtro para buscar puestos."]);
       return;

@@ -111,10 +111,4 @@ public class CompetenciaService {
         return competenciaRepository.save(competencia);
     }
 
-    public void eliminarCompetencia(Long id) {
-        Competencia competencia = buscarPorId(id);
-        competencia.setEstaActivo(false);
-        competenciaRepository.save(competencia);
-    }
-
 }

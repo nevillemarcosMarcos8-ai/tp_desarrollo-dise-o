@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface FactorRepository extends JpaRepository<Factor,Long> {
     List<Factor> findByCompetenciaId(Long id);
+    boolean existsByCompetencia_Id(Long idCompetencia);
     Optional<Factor> findByCompetenciaIdAndNombre(
             Long id,
             String nombreFactor

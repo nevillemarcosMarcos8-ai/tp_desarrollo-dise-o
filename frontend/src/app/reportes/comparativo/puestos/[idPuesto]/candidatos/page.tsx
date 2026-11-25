@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { usePosition } from "@/features/positions/hooks";
 import type { Position } from "@/features/positions/types";
-import { comparativeCandidatesExample } from "@/features/reports/mock-data";
+import { useCompletedCandidates } from "@/features/reports/hooks";
 import type { ComparativeCandidate } from "@/features/reports/types";
 import { Button, DataTable, ErrorMessage, Notice, PageHeader, Panel, ValidationSummary } from "@/shared/ui";
 
@@ -17,16 +17,21 @@ export default function ComparativeCandidatesPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const positionQuery = usePosition();
-  const candidates: ComparativeCandidate[] = comparativeCandidatesExample;
+  const candidatesQuery = useCompletedCandidates();
+  const [candidates, setCandidates] = useState<ComparativeCandidate[]>([]);
   const query = searchParams.toString();
   const querySuffix = query ? `?${query}` : "";
 
   useEffect(() => {
     let mounted = true;
     if (!Number.isInteger(idPuesto) || idPuesto <= 0) return;
+    setCandidates([]);
     positionQuery.execute(idPuesto).then((result) => { if (mounted && result) setPosition(result); });
+    candidatesQuery.execute(idPuesto).then((result) => {
+      if (mounted && result) setCandidates(result);
+    });
     return () => { mounted = false; };
-  }, [idPuesto, positionQuery.execute]);
+  }, [idPuesto, positionQuery.execute, candidatesQuery.execute]);
 
   function compare() {
     if (!selected) {
@@ -42,8 +47,8 @@ export default function ComparativeCandidatesPage() {
 
   return <>
     <PageHeader eyebrow="CU027 · Paso 2 de 3" title="Candidatos evaluados" description={position ? `${position.nombre} · ${position.empresaNombre ?? "Empresa sin nombre"}` : `Puesto ID ${idPuesto}`} actions={<Button variant="secondary" onClick={backToPositions}>Volver a puestos</Button>} />
-    <Notice tone="warning" title="Lista de ejemplo; falta conectar el backend">El backend todavía no ofrece la búsqueda de candidatos con cuestionario completo por puesto. Estos candidatos son inventados para poder probar el recorrido; no pertenecen a la base de datos.</Notice>
     <Panel title="Elegir candidato" description="El caso de uso requiere listar solo candidatos con cuestionario completo para el puesto seleccionado.">
+      {candidatesQuery.isPending ? <Notice>Cargando candidatos con evaluación completa…</Notice> : candidates.length === 0 && !candidatesQuery.error ? <Notice>No hay candidatos con cuestionario completo para este puesto.</Notice> : null}
       <DataTable
         rows={candidates}
         rowKey={(row) => row.idCuestionario}
@@ -60,7 +65,8 @@ export default function ComparativeCandidatesPage() {
       <div className="mt-4 grid justify-items-start gap-2">
         <ValidationSummary errors={errors} />
         <ErrorMessage error={positionQuery.error} />
-        <Button onClick={compare}>Comparar candidato</Button>
+        <ErrorMessage error={candidatesQuery.error} />
+        <Button disabled={!selected || candidatesQuery.isPending} onClick={compare}>Comparar candidato</Button>
       </div>
     </Panel>
   </>;

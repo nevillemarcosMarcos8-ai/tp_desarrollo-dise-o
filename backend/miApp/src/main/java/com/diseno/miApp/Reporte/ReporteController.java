@@ -38,4 +38,19 @@ public class ReporteController {
                 reporteServices.emitirOrdenMerito(idPuesto)
         );
     }
+
+    @GetMapping("/puestos/{idPuesto}/candidatos-completos")
+    public ResponseEntity<List<CandidatoComparativoResponse>>
+    obtenerCandidatosCompletos(@PathVariable Long idPuesto) {
+        return ResponseEntity.ok(
+                reporteServices.obtenerCandidatosCompletos(idPuesto));
+    }
+
+    @GetMapping("/puestos/{idPuesto}/cuestionarios/{idCuestionario}/comparativo")
+    public ResponseEntity<ReporteComparativoResponse> emitirReporteComparativo(
+            @PathVariable Long idPuesto,
+            @PathVariable Long idCuestionario) {
+        return ResponseEntity.ok(
+                reporteServices.emitirReporteComparativo(idPuesto, idCuestionario));
+    }
 }

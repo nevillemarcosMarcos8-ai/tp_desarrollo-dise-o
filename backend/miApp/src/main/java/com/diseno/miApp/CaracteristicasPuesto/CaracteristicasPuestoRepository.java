@@ -10,6 +10,8 @@ import java.util.List;
 public interface CaracteristicasPuestoRepository extends JpaRepository<CaracteristicasPuesto,Long> {
     List<CaracteristicasPuesto> findByPuesto_Id(Long idPuesto);
 
+    boolean existsByCompetencia_Id(Long idCompetencia);
+
     @Modifying
     @Query("DELETE FROM CaracteristicasPuesto c WHERE c.puesto.id = :idPuesto")
     void eliminarPorPuestoId(@Param("idPuesto") Long idPuesto);

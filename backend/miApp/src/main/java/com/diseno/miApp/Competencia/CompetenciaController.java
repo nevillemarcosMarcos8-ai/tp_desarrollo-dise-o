@@ -1,5 +1,7 @@
 package com.diseno.miApp.Competencia;
 
+import com.diseno.miApp.RegistroAuditoria.GestionBajasService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -10,8 +12,13 @@ import java.util.List;
 @RequestMapping("/Competencia")
 public class CompetenciaController {
     private CompetenciaService competenciaService;
-    public CompetenciaController(CompetenciaService comptenciaService){
+    private final GestionBajasService gestionBajasService;
+
+    public CompetenciaController(
+            CompetenciaService comptenciaService,
+            GestionBajasService gestionBajasService) {
         this.competenciaService=comptenciaService;
+        this.gestionBajasService = gestionBajasService;
     }
 
     @GetMapping
@@ -59,9 +66,10 @@ public class CompetenciaController {
     }
     @DeleteMapping("/eliminar/{id}")
     public ResponseEntity<Void> eliminarCompetencia(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            HttpSession session) {
 
-        competenciaService.eliminarCompetencia(id);
+        gestionBajasService.darBajaCompetencia(id, session);
 
         return ResponseEntity.noContent().build();
     }
