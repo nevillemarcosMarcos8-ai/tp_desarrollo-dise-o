@@ -7,6 +7,8 @@ import java.util.Map;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 import java.util.Objects;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.diseno.miApp.Cuestionario.Cuestionario;
 import com.diseno.miApp.Cuestionario.CuestionarioServices;
@@ -230,11 +232,60 @@ public class ReporteServices {
     }
 
     @Transactional(readOnly = true)
-    public List<OrdenMeritoGrupoDTO> emitirOrdenMerito(Long idPuesto) {
+    public List<EvaluacionOrdenMeritoResponse> listarEvaluacionesOrdenMerito(
+            Long idPuesto) {
         validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
         puestoServices.buscarPorId(idPuesto);
-        List<Cuestionario> cuestionarios =
+        return cuestionarioServices.buscarTodosPorPuesto(idPuesto).stream()
+                .sorted(Comparator.comparing(
+                        Cuestionario::getFechaCreacion,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .map(EvaluacionOrdenMeritoResponse::new)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrdenMeritoGrupoDTO> emitirOrdenMerito(
+            Long idPuesto,
+            boolean todas,
+            List<Long> idsCuestionario) {
+        validarIdPositivo(idPuesto, "El ID del puesto debe ser positivo");
+        puestoServices.buscarPorId(idPuesto);
+        List<Cuestionario> todosLosCuestionarios =
                 cuestionarioServices.buscarTodosPorPuesto(idPuesto);
+
+        List<Cuestionario> cuestionarios;
+        if (todas) {
+            if (idsCuestionario != null && !idsCuestionario.isEmpty()) {
+                throw errorSolicitud(
+                        "Elegí TODAS o cuestionarios específicos, no ambas opciones");
+            }
+            cuestionarios = todosLosCuestionarios;
+        } else {
+            if (idsCuestionario == null || idsCuestionario.isEmpty()) {
+                throw errorSolicitud(
+                        "Seleccioná al menos una evaluación o elegí TODAS");
+            }
+            if (idsCuestionario.stream().anyMatch(Objects::isNull)
+                    || idsCuestionario.stream().anyMatch(id -> id <= 0)) {
+                throw errorSolicitud(
+                        "Los IDs de cuestionario deben ser positivos");
+            }
+            Set<Long> seleccionados = new HashSet<>(idsCuestionario);
+            if (seleccionados.size() != idsCuestionario.size()) {
+                throw errorSolicitud("No repitas cuestionarios en la selección");
+            }
+            Set<Long> pertenecientesAlPuesto = todosLosCuestionarios.stream()
+                    .map(Cuestionario::getId)
+                    .collect(Collectors.toSet());
+            if (!pertenecientesAlPuesto.containsAll(seleccionados)) {
+                throw errorNoEncontrado(
+                        "Uno o más cuestionarios no pertenecen al puesto indicado");
+            }
+            cuestionarios = todosLosCuestionarios.stream()
+                    .filter(cuestionario -> seleccionados.contains(cuestionario.getId()))
+                    .toList();
+        }
 
         if (cuestionarios.isEmpty()) {
             throw errorNoEncontrado(

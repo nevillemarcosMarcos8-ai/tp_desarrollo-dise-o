@@ -12,6 +12,7 @@ import com.diseno.miApp.Pregunta.PreguntaRepository;
 import com.diseno.miApp.Puesto.Puesto;
 import com.diseno.miApp.Puesto.PuestoRepository;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ public class GestionBajasService {
     private final FactorRepository factorRepository;
     private final PreguntaRepository preguntaRepository;
     private final RegistroAuditoriaService auditoriaService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public GestionBajasService(
             PuestoRepository puestoRepository,
@@ -39,7 +41,8 @@ public class GestionBajasService {
             CaracteristicasPuestoRepository caracteristicasRepository,
             FactorRepository factorRepository,
             PreguntaRepository preguntaRepository,
-            RegistroAuditoriaService auditoriaService) {
+            RegistroAuditoriaService auditoriaService,
+            ApplicationEventPublisher eventPublisher) {
         this.puestoRepository = puestoRepository;
         this.cuestionarioRepository = cuestionarioRepository;
         this.competenciaRepository = competenciaRepository;
@@ -47,6 +50,7 @@ public class GestionBajasService {
         this.factorRepository = factorRepository;
         this.preguntaRepository = preguntaRepository;
         this.auditoriaService = auditoriaService;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -65,8 +69,8 @@ public class GestionBajasService {
 
         puesto.setEstaActiva(false);
         puestoRepository.save(puesto);
-        auditoriaService.registrarBaja(
-                consultor, TipoEntidadAuditoria.PUESTO, id, puesto.getNombre());
+        publicarBaja(consultor, TipoEntidadAuditoria.PUESTO,
+                id, puesto.getNombre());
     }
 
     @Transactional
@@ -92,12 +96,8 @@ public class GestionBajasService {
 
         competencia.setEstaActivo(false);
         competenciaRepository.save(competencia);
-        auditoriaService.registrarBaja(
-                consultor,
-                TipoEntidadAuditoria.COMPETENCIA,
-                id,
-                competencia.getNombre()
-        );
+        publicarBaja(consultor, TipoEntidadAuditoria.COMPETENCIA,
+                id, competencia.getNombre());
     }
 
     @Transactional
@@ -116,14 +116,11 @@ public class GestionBajasService {
         preguntasActivas.forEach(pregunta -> pregunta.setEstaActivo(false));
         preguntaRepository.saveAll(preguntasActivas);
 
-        auditoriaService.registrarBaja(
-                consultor, TipoEntidadAuditoria.FACTOR, id, factor.getNombre());
-        preguntasActivas.forEach(pregunta -> auditoriaService.registrarBaja(
-                consultor,
-                TipoEntidadAuditoria.PREGUNTA,
-                pregunta.getId(),
-                pregunta.getName()
-        ));
+        publicarBaja(consultor, TipoEntidadAuditoria.FACTOR,
+                id, factor.getNombre());
+        preguntasActivas.forEach(pregunta -> publicarBaja(
+                consultor, TipoEntidadAuditoria.PREGUNTA,
+                pregunta.getId(), pregunta.getName()));
     }
 
     @Transactional
@@ -138,12 +135,17 @@ public class GestionBajasService {
                 "La pregunta ya está dada de baja");
         pregunta.setEstaActivo(false);
         preguntaRepository.save(pregunta);
-        auditoriaService.registrarBaja(
-                consultor,
-                TipoEntidadAuditoria.PREGUNTA,
-                id,
-                pregunta.getName()
-        );
+        publicarBaja(consultor, TipoEntidadAuditoria.PREGUNTA,
+                id, pregunta.getName());
+    }
+
+    private void publicarBaja(
+            Consultor consultor,
+            TipoEntidadAuditoria tipoEntidad,
+            Long idEntidad,
+            String nombreEntidad) {
+        eventPublisher.publishEvent(new BajaLogicaRealizada(
+                consultor, tipoEntidad, idEntidad, nombreEntidad));
     }
 
     private void validarActivo(Boolean activo, String mensaje) {

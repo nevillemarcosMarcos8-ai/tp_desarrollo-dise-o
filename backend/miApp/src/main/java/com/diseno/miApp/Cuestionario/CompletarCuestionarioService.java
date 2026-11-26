@@ -1,6 +1,8 @@
 package com.diseno.miApp.Cuestionario;
 
 import com.diseno.miApp.EstadoCuestionario.EstadoCuestionario;
+import com.diseno.miApp.EstadoCuestionario.AccionEstadoCuestionario;
+import com.diseno.miApp.EstadoCuestionario.EstadoCuestionarioStateMachine;
 import com.diseno.miApp.ModeloCuestionario.ModeloCompetencia;
 import com.diseno.miApp.ModeloCuestionario.ModeloOpcion;
 import com.diseno.miApp.ModeloCuestionario.ModeloPregunta;
@@ -34,6 +36,7 @@ public class CompletarCuestionarioService {
     private final ModeloOpcionRepository opcionRepository;
     private final RespuestaPreguntaCuestionarioService respuestaService;
     private final CalculoPuntajeHelper calculoPuntajeHelper;
+    private final EstadoCuestionarioStateMachine stateMachine;
     private final java.time.Duration plazoCompletar;
     private final int maximoAccesos;
 
@@ -44,6 +47,7 @@ public class CompletarCuestionarioService {
             ModeloOpcionRepository opcionRepository,
             RespuestaPreguntaCuestionarioService respuestaService,
             CalculoPuntajeHelper calculoPuntajeHelper,
+            EstadoCuestionarioStateMachine stateMachine,
             @Value("${cuestionario.plazo-completar}")
             java.time.Duration plazoCompletar,
             @Value("${cuestionario.maximo-accesos:5}") int maximoAccesos) {
@@ -53,6 +57,7 @@ public class CompletarCuestionarioService {
         this.opcionRepository = opcionRepository;
         this.respuestaService = respuestaService;
         this.calculoPuntajeHelper = calculoPuntajeHelper;
+        this.stateMachine = stateMachine;
         this.plazoCompletar = plazoCompletar;
         this.maximoAccesos = maximoAccesos;
     }
@@ -89,14 +94,15 @@ public class CompletarCuestionarioService {
         }
         if (cuestionario.getCantidadAccesos() != null
                 && cuestionario.getCantidadAccesos() >= maximoAccesos) {
-            vencer(cuestionario, EstadoCuestionario.INCOMPLETO,
+            vencer(cuestionario, AccionEstadoCuestionario.EXCEDER_ACCESOS,
                     "Se alcanzó el máximo de ingresos al cuestionario");
         }
 
         LocalDateTime ahora = LocalDateTime.now();
         registrarAcceso(cuestionario, ahora);
         if (cuestionario.getEstadoCuestionario() == EstadoCuestionario.ACTIVO) {
-            cuestionario.setEstadoCuestionario(EstadoCuestionario.EN_PROCESO);
+            cuestionario.setEstadoCuestionario(stateMachine.transicionar(
+                    EstadoCuestionario.ACTIVO, AccionEstadoCuestionario.INICIAR));
             cuestionario.setFechaInicio(ahora);
             cuestionario.setFechaLimiteFinalizacion(ahora.plus(plazoCompletar));
             cuestionario.setFechaCambioEstado(ahora);
@@ -160,7 +166,9 @@ public class CompletarCuestionarioService {
             CalculoPuntajeHelper.ResultadoPuntaje resultado =
                     calculoPuntajeHelper.calcularResultado(
                             todas, cuestionario.getModelo().getCompetencias());
-            cuestionario.setEstadoCuestionario(EstadoCuestionario.COMPLETO);
+            cuestionario.setEstadoCuestionario(stateMachine.transicionar(
+                    cuestionario.getEstadoCuestionario(),
+                    AccionEstadoCuestionario.COMPLETAR));
             cuestionario.setFechaRealizacion(LocalDateTime.now());
             cuestionario.setFechaCambioEstado(LocalDateTime.now());
             cuestionarioRepository.save(cuestionario);
@@ -197,20 +205,21 @@ public class CompletarCuestionarioService {
         if (cuestionario.getEstadoCuestionario() == EstadoCuestionario.ACTIVO
                 && cuestionario.getFechaLimiteActivo() != null
                 && ahora.isAfter(cuestionario.getFechaLimiteActivo())) {
-            vencer(cuestionario, EstadoCuestionario.SIN_CONTESTAR,
+            vencer(cuestionario, AccionEstadoCuestionario.VENCER,
                     "Venció el plazo para iniciar el cuestionario");
         }
         if (cuestionario.getEstadoCuestionario() == EstadoCuestionario.EN_PROCESO
                 && cuestionario.getFechaLimiteFinalizacion() != null
                 && ahora.isAfter(cuestionario.getFechaLimiteFinalizacion())) {
-            vencer(cuestionario, EstadoCuestionario.INCOMPLETO,
+            vencer(cuestionario, AccionEstadoCuestionario.VENCER,
                     "Venció el plazo para completar el cuestionario");
         }
     }
 
     private void vencer(Cuestionario cuestionario,
-                        EstadoCuestionario estado, String mensaje) {
-        cuestionario.setEstadoCuestionario(estado);
+                        AccionEstadoCuestionario accion, String mensaje) {
+        cuestionario.setEstadoCuestionario(stateMachine.transicionar(
+                cuestionario.getEstadoCuestionario(), accion));
         cuestionario.setFechaCambioEstado(LocalDateTime.now());
         cuestionarioRepository.save(cuestionario);
         throw new CuestionarioVencidoException(mensaje);

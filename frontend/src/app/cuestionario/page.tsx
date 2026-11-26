@@ -17,6 +17,7 @@ export default function QuestionnairePage() {
   const [session, setSession] = useState<QuestionnaireSession | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
   const [clave, setClave] = useState("");
+  const [showInstructions, setShowInstructions] = useState(false);
   const [data, setData] = useState<QuestionnaireResponse | null>(null);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [error, setError] = useState<unknown>(null);
@@ -66,8 +67,16 @@ export default function QuestionnairePage() {
       return;
     }
     setError(null);
+    access.clear();
+    setShowInstructions(true);
+  }
+
+  async function acceptInstructions() {
+    if (!session) return;
+    setError(null);
     const response = await access.execute({ token: session.token, claveIngreso: clave.trim() });
     if (response) updateResponse(response);
+    else setShowInstructions(false);
   }
 
   function markedAnswers(): MarkedAnswer[] {
@@ -110,13 +119,24 @@ export default function QuestionnairePage() {
   }
 
   return <>
-    <PageHeader eyebrow="Perfil candidato" title="Realizar cuestionario" description={`Sesión iniciada como ${session.nombreCandidato}. Primero validamos la clave que te compartió el consultor.`} actions={<Button variant="secondary" onClick={logout}>Cerrar sesión</Button>} />
-    {!data ? <Panel title="Clave de ingreso" description="La clave corresponde al cuestionario asignado a tu candidatura.">
+    <PageHeader eyebrow="Perfil candidato" title="Realizar cuestionario" description={`Sesión iniciada como ${session.nombreCandidato}. Ingresá la clave y revisá las instrucciones antes de iniciar.`} actions={<Button variant="secondary" onClick={logout}>Cerrar sesión</Button>} />
+    {!data && !showInstructions ? <Panel title="Clave de ingreso" description="La clave corresponde al cuestionario asignado a tu candidatura. Se validará cuando aceptes iniciar.">
       <form noValidate onSubmit={enterQuestionnaire} className="grid max-w-xl gap-4">
         <Field label="Clave de ingreso *" autoComplete="off" value={clave} onChange={(event) => setClave(event.target.value)} />
         <ErrorMessage error={error ?? access.error} />
-        <Button disabled={busy}>{busy ? "Verificando…" : "Abrir cuestionario"}</Button>
+        <Button disabled={busy}>{busy ? "Continuando…" : "Continuar a instrucciones"}</Button>
       </form>
+    </Panel> : !data ? <Panel title="Instrucciones del cuestionario" description="Leé estas indicaciones antes de comenzar.">
+      <div className="max-w-2xl space-y-3 text-sm text-slate-700">
+        <p>Respondé cada pregunta seleccionando la opción que mejor describa tu situación.</p>
+        <p>Podés guardar tus respuestas y continuar después mientras el cuestionario siga habilitado.</p>
+        <p>Al finalizar el bloque, tus respuestas quedan registradas para esta evaluación.</p>
+      </div>
+      <ErrorMessage error={error ?? access.error} />
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Button disabled={busy} onClick={() => void acceptInstructions()}>{busy ? "Abriendo…" : "Aceptar e iniciar"}</Button>
+        <Button variant="secondary" disabled={busy} onClick={() => { setShowInstructions(false); setError(null); access.clear(); }}>Cancelar</Button>
+      </div>
     </Panel> : <Panel title={`Bloque ${data.bloque ?? "—"}`} description="Tus respuestas se guardan contra la versión asignada a esta evaluación.">
       {data.preguntas.map((question, index) => <fieldset key={question.idPreguntaModelo} className="mb-5 rounded-lg border border-[var(--color-border)] p-4">
         <legend className="px-1 text-xs font-semibold uppercase text-[var(--color-brand)]">Pregunta {index + 1}</legend>

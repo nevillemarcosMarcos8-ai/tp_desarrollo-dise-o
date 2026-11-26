@@ -48,7 +48,7 @@ export default function QuestionsResults({ criteria }: { criteria: Criteria }) {
   }
 
   return <>
-    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Resultado de la búsqueda de preguntas." actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => router.push("/administracion/preguntas")}>Volver a buscar</Button><Button onClick={() => router.push("/administracion/preguntas/nueva")}>Nueva pregunta</Button></div>} />
+    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Resultado de la búsqueda de preguntas." actions={<div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => router.push("/administracion/preguntas")}>Volver a buscar</Button><Button onClick={() => router.push("/administracion/preguntas/nueva")}>Nueva pregunta</Button><Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button></div>} />
     <Panel title="Resultados de la búsqueda" description="Se muestran las preguntas que coinciden con los criterios ingresados.">
       {loading ? <LoadingState label="Buscando preguntas…" /> : <DataTable rows={visibleRows} rowKey={(row) => row.id} columns={[
         { key: "competencia", header: "Competencia", render: (row) => row.factor?.competencia?.nombre ?? "—" },

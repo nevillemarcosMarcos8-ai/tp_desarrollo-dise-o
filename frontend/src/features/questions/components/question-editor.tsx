@@ -170,18 +170,18 @@ export function QuestionEditor({ mode, question }: { mode: EditorMode; question?
 
   if (isUpdate && !question) return <LoadingState label="Cargando la pregunta…" />;
   if (createdName) return <>
-    <PageHeader eyebrow="CU021 · Alta" title="Pregunta creada" description={`La pregunta “${createdName}” se creó correctamente.`} />
+    <PageHeader eyebrow="CU021 · Alta" title="Pregunta creada" description={`La pregunta “${createdName}” se creó correctamente.`} actions={<Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button>} />
     <Panel title="¿Deseás cargar otra pregunta?" description="Elegí cómo continuar.">
       <div className="flex flex-wrap gap-3"><Button onClick={createAnother}>Sí, cargar otra</Button><Button variant="secondary" onClick={() => router.push("/administracion/preguntas")}>No, volver a gestión</Button></div>
     </Panel>
   </>;
   if (updateDone) return <>
-    <PageHeader eyebrow="CU022 · Modificación" title="Pregunta modificada" description="La operación ha culminado con éxito." />
+    <PageHeader eyebrow="CU022 · Modificación" title="Pregunta modificada" description="La operación ha culminado con éxito." actions={<Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button>} />
     <Panel title="Cambios guardados"><Notice tone="success">La operación ha culminado con éxito.</Notice><Button onClick={() => router.push("/administracion/preguntas")}>Volver a gestionar preguntas</Button></Panel>
   </>;
 
   return <>
-    <PageHeader eyebrow={isUpdate ? "CU022 · Modificación" : "CU021 · Alta"} title={title} description={isUpdate ? "Competencia y factor son de solo lectura. Modificá los demás datos y confirmá." : "Completá los datos y asociá una ponderación a cada detalle de la opción de respuesta."} />
+    <PageHeader eyebrow={isUpdate ? "CU022 · Modificación" : "CU021 · Alta"} title={title} description={isUpdate ? "Competencia y factor son de solo lectura. Modificá los demás datos y confirmá." : "Completá los datos y asociá una ponderación a cada detalle de la opción de respuesta."} actions={<Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button>} />
     <Panel title={title} description="Los textos literales se guardan en mayúsculas, según el caso de uso.">
       {loadingReferences ? <LoadingState label="Cargando competencias, factores y opciones…" /> : <form noValidate className="grid gap-5" onSubmit={submit}>
         <ErrorMessage error={competencyList.error} />

@@ -48,7 +48,7 @@ export default function QuestionsManagementPage() {
   const availableFactors = factors.filter((factor) => !competencyId || factor.competenciaId === Number(competencyId));
 
   return <>
-    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Buscá preguntas existentes o iniciá el alta de una nueva." />
+    <PageHeader eyebrow="CU020 · Gestión" title="Gestionar preguntas" description="Buscá preguntas existentes o iniciá el alta de una nueva." actions={<Button variant="secondary" onClick={() => router.push("/consultor")}>Salir</Button>} />
     <Panel title="Filtros de búsqueda" description="Completá al menos un criterio para buscar preguntas.">
       {loading ? <LoadingState label="Cargando competencias y factores…" /> : <form onSubmit={search} className="grid gap-5 sm:grid-cols-2">
         <SelectField label="Competencia" value={competencyId} onChange={(event) => { setCompetencyId(event.target.value); setFactorId(""); }}>

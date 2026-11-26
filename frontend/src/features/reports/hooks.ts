@@ -6,7 +6,9 @@ import type { PositionReportSearch } from "./types";
 export const useSearchPositionSummaries = () =>
   useServiceAction((body: PositionReportSearch) => service.searchPositionSummaries(body));
 export const useMeritOrder = () =>
-  useServiceAction((positionId: number) => service.getMeritOrder(positionId));
+  useServiceAction(({ positionId, selection }: { positionId: number; selection: { todas: boolean; idsCuestionario: number[] } }) => service.getMeritOrder(positionId, selection));
+export const useMeritOrderEvaluations = () =>
+  useServiceAction((positionId: number) => service.getMeritOrderEvaluations(positionId));
 export const useCompletedCandidates = () =>
   useServiceAction((positionId: number) => service.getCompletedCandidates(positionId));
 export const useComparativeReport = () =>

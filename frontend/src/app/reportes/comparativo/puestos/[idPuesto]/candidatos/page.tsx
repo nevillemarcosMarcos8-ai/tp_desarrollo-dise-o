@@ -66,7 +66,7 @@ export default function ComparativeCandidatesPage() {
         <ValidationSummary errors={errors} />
         <ErrorMessage error={positionQuery.error} />
         <ErrorMessage error={candidatesQuery.error} />
-        <Button disabled={!selected || candidatesQuery.isPending} onClick={compare}>Comparar candidato</Button>
+        <Button disabled={candidatesQuery.isPending} onClick={compare}>Comparar candidato</Button>
       </div>
     </Panel>
   </>;

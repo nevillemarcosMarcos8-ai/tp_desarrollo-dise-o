@@ -6,6 +6,8 @@ import com.diseno.miApp.Consultor.ConsultorSesion;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -42,6 +44,7 @@ public class RegistroAuditoriaService {
                 ));
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
     public void registrarBaja(
             Consultor usuario,
             TipoEntidadAuditoria tipoEntidad,
